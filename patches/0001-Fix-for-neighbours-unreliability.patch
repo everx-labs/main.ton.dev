@@ -1,0 +1,26 @@
+From 2c5f5aa598a7589714b851e34c2e703c6127810f Mon Sep 17 00:00:00 2001
+From: Slava <slava@qey.ai>
+Date: Sun, 19 Apr 2020 21:35:14 +0300
+Subject: [PATCH] Fix for neighbours unreliability
+
+---
+ validator/full-node-shard.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/validator/full-node-shard.cpp b/validator/full-node-shard.cpp
+index b70904f..46d503b 100644
+--- a/validator/full-node-shard.cpp
++++ b/validator/full-node-shard.cpp
+@@ -956,7 +956,8 @@ void FullNodeShardImpl::got_neighbour_capabilities(adnl::AdnlNodeIdShort adnl_id
+     it->second.query_failed();
+   } else {
+     it->second.update_proto_version(*F.move_as_ok().get());
+-    it->second.update_roundtrip(t);
++    it->second.query_success(t);
++//    it->second.update_roundtrip(t);
+   }
+ }
+ 
+-- 
+2.24.1 (Apple Git-126)
+
