@@ -81,9 +81,9 @@ Make sure that the wallet was deployed at the address saved in `$(hostname -s).a
 
 Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wallet to Elector smart contract in every validation cycle.
 
-Run the validator script:
+Run the validator script (periodically, e.g. each 10 min.):
 
-    $ watch -n 600 "./validator_msig.sh <STAKE> | tee -a ./validator.log 2>&1"
+    $ ./validator_msig.sh <STAKE> | tee -a ./validator.log 2>&1
 
 ### How validator script works
 
