@@ -83,7 +83,7 @@ Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wall
 
 Run the validator script:
 
-    $ watch -n 60 ./validator_msig.sh <STAKE> >> ./validator.log 2>&1
+    $ watch -n 600 "./validator_msig.sh <STAKE> | tee -a ./validator.log 2>&1"
 
 ### How validator script works
 

@@ -1,4 +1,4 @@
-#!/bin/bash -eE
+#!/bin/bash -eEx
 
 set -o pipefail
 
@@ -35,6 +35,7 @@ if [ -z "${STAKE}" ]; then
     exit 1
 fi
 
+TONOS_CLI_SEND_ATTEMPTS="100"
 MSIG_ADDR=$(cat "${KEYS_DIR}/${VALIDATOR_NAME}.addr")
 echo "INFO: MSIG_ADDR = ${MSIG_ADDR}"
 ELECTIONS_WORK_DIR="${KEYS_DIR}/elections"
@@ -91,14 +92,19 @@ if [ "$election_id" == "0" ]; then
 
         recover_query_boc=$(base64 --wrap=0 "${ELECTIONS_WORK_DIR}/recover-query.boc")
 
-        "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
-            "{\"dest\":\"${elector_addr}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${recover_query_boc}\"}" \
-            --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-            --sign "${KEYS_DIR}/msig.keys.json" \
-            >"${ELECTIONS_WORK_DIR}/recover_stake.transId"
+        for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
+            echo "INFO: tonos-cli submitTransaction attempt #${i}..."
+            if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
+                "{\"dest\":\"${elector_addr}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${recover_query_boc}\"}" \
+                --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+                --sign "${KEYS_DIR}/msig.keys.json"; then
+                echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
+            else
+                echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
+                break
+            fi
+        done
 
-        transactionId=$(grep transId "${ELECTIONS_WORK_DIR}/recover_stake.transId")
-        echo "INFO: $transactionId" # send to other custodians for confirmation
         date +"INFO: %F %T Recover of $recover_amount GR requested"
     fi
 
@@ -113,7 +119,7 @@ fi
 
 if [ -f "${ELECTIONS_WORK_DIR}/active-election-id" ]; then
     active_election_id=$(cat "${ELECTIONS_WORK_DIR}/active-election-id")
-    if [ "$active_election_id" == "$election_id" ]; then
+    if [ "$active_election_id" = "$election_id" ]; then
         date +"INFO: %F %T Elections $election_id, already submitted"
         echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
         exit
@@ -218,15 +224,18 @@ bash "${ELECTIONS_WORK_DIR}/elector-run3"
 validator_query_boc=$(base64 --wrap=0 "${ELECTIONS_WORK_DIR}/validator-query.boc")
 elector_addr=$(cat "${ELECTIONS_WORK_DIR}/elector-addr-base64")
 
-"${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
-    "{\"dest\":\"${elector_addr}\",\"value\":\"${NANOSTAKE}\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${validator_query_boc}\"}" \
-    --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-    --sign "${KEYS_DIR}/msig.keys.json" \
-    >"${ELECTIONS_WORK_DIR}/process_new_stake.transId"
-
-# TODO: add check if tonos-cli is failed
-transactionId=$(grep transId "${ELECTIONS_WORK_DIR}/process_new_stake.transId")
-echo "INFO: $transactionId" # send to other custodians for confirmation
+for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
+    echo "INFO: tonos-cli submitTransaction attempt #${i}..."
+    if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
+        "{\"dest\":\"${elector_addr}\",\"value\":\"${NANOSTAKE}\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${validator_query_boc}\"}" \
+        --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+        --sign "${KEYS_DIR}/msig.keys.json"; then
+        echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
+    else
+        echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
+        break
+    fi
+done
 
 date +"INFO: %F %T prepared for elections"
 
