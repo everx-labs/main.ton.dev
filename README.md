@@ -83,7 +83,7 @@ Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wall
 
 Run the validator script (periodically, e.g. each 10 min.):
 
-    $ ./validator_msig.sh <STAKE> | tee -a ./validator.log 2>&1
+    $ ./validator_msig.sh <STAKE> >> ./validator_msig.log 2>&1
 
 ### How validator script works
 
