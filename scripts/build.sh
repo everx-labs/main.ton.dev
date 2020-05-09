@@ -19,9 +19,14 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 . "${SCRIPT_DIR}/env.sh"
 
 if [ "${INSTALL_DEPENDENCIES}" = "yes" ]; then
+    if ! sudo -V >/dev/null ; then
+        echo "Looks like sudo is not installed. You need to install it to proceed with dependencies installation"
+        exit 0
+    fi
     echo "INFO: install dependencies..."
     sudo apt update && sudo apt -y install \
         build-essential \
+        git \
         cargo \
         ccache \
         cmake \
