@@ -22,34 +22,34 @@
 Инициализация ноды:
 
     $ ./setup.sh
-### 4. Prepare Multisignature Wallet
-**Note**: All manual calls of the TONOS-CLI utility should be performed from the `scripts` folder.
+### 4. Подготавливаем Multisignature Wallet
+**Заметка**: Все обращения к утилите TONOS-CLI должны выполняться из папки `scripts`.
 
-Multisignature wallet (or just wallet) is used in validator script to send election requests to the Elector smart contract.
+Multisignature wallet (или просто кошелек) используется валидатором для отправки election requests to the Elector smart contract.
 
-Let `N` be the total number of wallet custodians and `K` the number of minimal confirmations required to execute a wallet transaction.
+Пусть `N` будет общим кол-вом кошельков custodians и `K` количество минимальных подтверждений, необходимых для выполнения транзакции кошелька.
 
-1. Read [TONOS-CLI documentation](https://docs.ton.dev/86757ecb2/v/0/p/94921e-running-tonos-cli-with-tails-os-and-working-with-multisignature-wallet) (*Deploying Multisignature Wallet to TON blockchain*) and generate seed phrases and public keys for `N - 1`  custodians.
-2. Generate wallet address and `Nth` custodian key:
+1. Прочтите [TONOS-CLI документацию](https://docs.ton.dev/86757ecb2/v/0/p/94921e-running-tonos-cli-with-tails-os-and-working-with-multisignature-wallet) (*Deploying Multisignature Wallet to TON blockchain*) и сгенерируйте мнемоническую фразу и публичные ключи для `N - 1` custodians.
+2. Генерируем адрес кошелька и `Nth` custodian ключ:
 ```
     $ ./msig_genaddr.sh
 ```
-Script creates 2 files: `$(hostname -s).addr` and `msig.keys.json` in `~/ton-keys/` folder. 
-Use public key from `msig.keys.json` as `Nth` custodian public key when you will deploy the wallet.
+Этот скрипт создает 2 файла: `$(hostname -s).addr` и `msig.keys.json` в папке `~/ton-keys/`. 
+Используем публичный ключ и `msig.keys.json` как `Nth` custodian публичный ключ когда будем осуществлять деплой кошелька.
 
-## Run Validator Node
-Do this step when the network is launched.
-Run the node:
+## Запуск ноды валидатора
+Выполняем этот шаг когда сеть запущена.
+Запускаем ноду:
 
     $ ./run.sh
   
-Wait until the node is synced with the masterchain. Depending on network throughput this step may take significant time (up to several hours).
+Дожидаемся когда нода произведет синхронизацию с мастерчейном. В зависимости от пропускной способности сети этот шаг может занять значительное время (до нескольких часов).
 
-You may use the following script to check if the node is synced:
+Вы можете использовать следующий скрипт для проверки синхронизации ноды:
 
     $ ./check_node_sync_status.sh
 
-Script output example:
+Пример вывода скрипта:
 ```
 connecting to [127.0.0.1:3030]
 local key: FB0A67F8992DB0EF51860D45E89951275A4D6EB6A381BBF99023292982F97247
@@ -66,28 +66,28 @@ stateserializermasterchainseqno            984
 shardclientmasterchainseqno            988
 INFO: TIME_DIFF = -2
 ```
-If the `TIME_DIFF` parameter equals a few seconds, synchronization is complete.
+Если параметр `TIME_DIFF` равен нескольким секундам, процесс синхронинзации завершен.
 
-### 1. Initialize multisignature wallet
+### 1. Инициализация multisignature wallet
 
-**Note**: All manual calls of the TONOS-CLI utility should be performed from the `scripts` folder.
+**Заметка**: Все обращения к утилите TONOS-CLI должны выполняться из папки `scripts`.
 
 
 Gather all custodians' public keys and deploy wallet using [TONOS-CLI](https://docs.ton.dev/86757ecb2/v/0/p/94921e-running-tonos-cli-with-tails-os-and-working-with-multisignature-wallet) (lookup Deploying Multisignature Wallet to TON blockchain in the document above). Use `K` value as `reqConfirms` deploy parameter.
 Make sure that the wallet was deployed at the address saved in `$(hostname -s).addr` file.
 
 
-### 2. Run Validator script
+### 2.Запуск скрипта валидатора
 
 Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wallet to Elector smart contract in every validation cycle.
 
-Run the validator script:
+Запускаем скрипт валидатора:
 
     $ watch -n 60 ./validator_msig.sh <STAKE> >> ./validator.log 2>&1
 
-### How validator script works
+### Принцип работы скрипта валидатора
 
-Script runs every minute.
+Скрипт запускается каждую минуту.
 
 1. Makes an initial check for masterchain.
 2. Checks startup time.
