@@ -4,7 +4,7 @@
 # Начало
 
 ## Системные Требования
-| Конфигурация | CPU (cores) | RAM (GiB) | Storage (GiB) | Network (Gbit/s)|
+| Конфигурация | CPU (ядра) | RAM (GiB) | Storage (GiB) | Network (Gbit/s)|
 |---|:---|:---|:---|:---|
 | Минимальная |8|16|1000|1|
 | Рекомендуемая |16|32|1000|1| 
@@ -73,13 +73,13 @@ INFO: TIME_DIFF = -2
 **Заметка**: Все обращения к утилите TONOS-CLI должны выполняться из папки `scripts`.
 
 
-Gather all custodians' public keys and deploy wallet using [TONOS-CLI](https://docs.ton.dev/86757ecb2/v/0/p/94921e-running-tonos-cli-with-tails-os-and-working-with-multisignature-wallet) (lookup Deploying Multisignature Wallet to TON blockchain in the document above). Use `K` value as `reqConfirms` deploy parameter.
-Make sure that the wallet was deployed at the address saved in `$(hostname -s).addr` file.
+Собирите со всех custodians' публичные ключи и осуществите деплой используя [TONOS-CLI](https://docs.ton.dev/86757ecb2/v/0/p/94921e-running-tonos-cli-with-tails-os-and-working-with-multisignature-wallet) (lookup Deploying Multisignature Wallet to TON blockchain in the document above). Используя значение `K` как `reqConfirms` параметр деплоя.
+Убедитесь, что кошелек был развернут по адресу, сохраненному в файле `$(hostname -s).addr`.
 
 
 ### 2.Запуск скрипта валидатора
 
-Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wallet to Elector smart contract in every validation cycle.
+Указываем аргумент `<STAKE>` в токенах. Эта количество токенов будет отправляться с помощью кошелька в Elector smart contract в каждом цикле проверки.
 
 Запускаем скрипт валидатора:
 
@@ -102,10 +102,11 @@ Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wall
     3. Вызывает `validator-engine-console` для генерации нового ключа валидатора и adnl адреса;
     4. Читает конфигурационный параметр 15, чтобы получить elections тайм-ауты;
     5. Запускаеи `validator-elect-req.fif` fift скрипт для генерации неподписанных валидатором election запросов;
-    6. calls `validator-engine-console` to sign election request with newly generated validator keypair;
-    7. submits new transaction from wallet to Elector contract with `$stake` amount of tokens and `process_new_stake` payload;
-    8. if request to wallet succeeds, script extracts `transactionId` and prints it in terminal;
+    6. Вызывает `validator-engine-console` для подписи election запроса с заново сгенерированным keypair валидатора;
+    7. Отправляет новую транзакцию из кошелька к Elector contract с `$stake` количеством токенов и `process_new_stake` payload;
+    8. Если запрос к кошельку успешный, скрипт извлекает `transactionId` и печатает его в терминале;
     9. wallet custodians should confirm transaction using this Id. When wallet accumulates the required number of confirmations, it sends validator election request to Elector.
+    9. Кошельки custodians должны подтвердить транзакцию, используя этот Id. Когда кошелек накапливает необходимое количество подтверждений, он отправляет validator election request to Elector.
 
 
 
