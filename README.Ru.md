@@ -105,7 +105,6 @@ INFO: TIME_DIFF = -2
     6. Вызывает `validator-engine-console` для подписи election запроса с заново сгенерированным keypair валидатора;
     7. Отправляет новую транзакцию из кошелька к Elector contract с `$stake` количеством токенов и `process_new_stake` payload;
     8. Если запрос к кошельку успешный, скрипт извлекает `transactionId` и печатает его в терминале;
-    9. wallet custodians should confirm transaction using this Id. When wallet accumulates the required number of confirmations, it sends validator election request to Elector.
     9. Кошельки custodians должны подтвердить транзакцию, используя этот Id. Когда кошелек накапливает необходимое количество подтверждений, он отправляет validator election request to Elector.
 
 
