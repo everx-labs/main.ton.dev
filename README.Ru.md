@@ -1,4 +1,4 @@
-# README
+# README Russian
 
 Это руководство содержит инструкции о том, как построить и настроить узел валидатора в цепочке блоков TON. Приведенные ниже инструкции и сценарии были проверены в Ubuntu 18.04.
 # Начало
@@ -89,19 +89,19 @@ Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wall
 
 Скрипт запускается каждую минуту.
 
-1. Makes an initial check for masterchain.
-2. Checks startup time.
-3. Gets address of elector contract and reads `election_id` from elector contract.
-4. If `election_id` == 0 (that means no validator elections at the moment):
-    1. script requests size of validator stake that can be returned from elector. (by running Elector's `compute_returned_stake` get-method). Returned value will not be 0 if validator won previous elections and was a validator;
-    2. if this value != 0, script submits new transaction from wallet to Elector contract with 1 token and `recover-stake` payload;
-    3. if request to wallet succeeds, script extracts `transactionId` and prints it in terminal and then exits. Other wallet custodians should confirm transaction using this Id. 
-5. If `election_id` != 0 (that means it's time to participate in elections):
-    1. checks if `stop-election` file exists then exits;
-    2. checks if file `active-election-id` exists, then reads `active_election_id` from it and compares it to `election_id`. If they are equal then exits (it means that validator has already sent its stake to Elector in current elections);
-    3. calls `validator-engine-console` to generate new validator key and adnl address;
-    4. reads config param 15 to get elections timeouts;
-    5. runs `validator-elect-req.fif` fift script to generate unsigned validator election request;
+1. Начальная проверка для мастерчейна.
+2. Проверка времени запуска.
+3. Получение адреса elector contract и чтение `election_id` из elector contract.
+4. Если `election_id` == 0 (Это означает что в данный момент нет validator elections):
+    1. Скрипт запрашивает размер стейка валидатора, который может быть возвращен от elector. (С запуском Elector's `compute_returned_stake` get-method). Возвращаемое значение не будет 0 если валидатор выиграл предыдущие выбор и был валидатором;
+    2. Если значение != 0, скрипт отправляет новую транзакцию из кошелька к Elector contract с 1 токеном и `recover-stake` payload;
+    3. Если запрос к кошельку успешный, скрипт извлекает `transactionId` и печатает его в терминале, а затем выходит. Другие кошельки custodians должны подтвердить эту транзакцию, используя аналогичный идентификатор.
+5. Если `election_id` != 0 (Это означает что пришло время участвовать в elections):
+    1. Проверяем, если файл `stop-election` существует, выходим;
+    2. Проверяем, если файл `active-election-id` существует, читаем из него значение `active_election_id` и сравниваем его с `election_id`. Если они равны, выходим (Это означает, что валидатор уже отправил свою свой стейк к Elector in current elections);
+    3. Вызывает `validator-engine-console` для генерации нового ключа валидатора и adnl адреса;
+    4. Читает конфигурационный параметр 15, чтобы получить elections тайм-ауты;
+    5. Запускаеи `validator-elect-req.fif` fift скрипт для генерации неподписанных валидатором election запросов;
     6. calls `validator-engine-console` to sign election request with newly generated validator keypair;
     7. submits new transaction from wallet to Elector contract with `$stake` amount of tokens and `process_new_stake` payload;
     8. if request to wallet succeeds, script extracts `transactionId` and prints it in terminal;
