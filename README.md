@@ -3,26 +3,27 @@
 This HOWTO contains instructions on how to build and configure a validator node in TON blockchain. The instructions and scripts below were verified on Ubuntu 18.04.
 # Getting Started
 
-## System Requirements
+## 1. System Requirements
 | Configuration | CPU (cores) | RAM (GiB) | Storage (GiB) | Network (Gbit/s)|
 |---|:---|:---|:---|:---|
 | Minimal |8|16|1000|1|
 | Recommended |16|32|1000|1| 
-## Prerequisites
-### 1. Set the Environment
+SSD disks are recommended for /var/ton-work/db storage.
+## 2. Prerequisites
+### 2.1 Set the Environment
 Adjust (if needed) `main.ton.dev/scripts/env.sh`
     
     $ cd main.ton.dev/scripts/
     $ . ./env.sh 
-### 2. Build Node
+### 2.2 Build Node
 Build a node:
 
     $ ./build.sh
-### 3. Setup Node
+### 2.3 Setup Node
 Initialize a node:
 
     $ ./setup.sh
-### 4. Prepare Multisignature Wallet
+### 2.4 Prepare Multisignature Wallet
 **Note**: All manual calls of the TONOS-CLI utility should be performed from the `scripts` folder.
 
 Multisignature wallet (or just wallet) is used in validator script to send election requests to the Elector smart contract.
@@ -37,7 +38,7 @@ Let `N` be the total number of wallet custodians and `K` the number of minimal c
 Script creates 2 files: `$(hostname -s).addr` and `msig.keys.json` in `~/ton-keys/` folder. 
 Use public key from `msig.keys.json` as `Nth` custodian public key when you will deploy the wallet.
 
-## Run Validator Node
+## 3. Run Validator Node
 Do this step when the network is launched.
 Run the node:
 
@@ -68,7 +69,7 @@ INFO: TIME_DIFF = -2
 ```
 If the `TIME_DIFF` parameter equals a few seconds, synchronization is complete.
 
-### 1. Initialize multisignature wallet
+### 3.1 Initialize multisignature wallet
 
 **Note**: All manual calls of the TONOS-CLI utility should be performed from the `scripts` folder.
 
@@ -77,13 +78,18 @@ Gather all custodians' public keys and deploy wallet using [TONOS-CLI](https://d
 Make sure that the wallet was deployed at the address saved in `$(hostname -s).addr` file.
 
 
-### 2. Run Validator script
+### 3.2 Run Validator script
 
 Specify `<STAKE>` argument in tokens. This amount of tokens will be sent by wallet to Elector smart contract in every validation cycle.
 
-Run the validator script (periodically, e.g. each 10 min.):
+Run the validator script (periodically, e.g. each 60 min.):
 
     $ ./validator_msig.sh <STAKE> >> ./validator_msig.log 2>&1
+
+cron example (run each hour):
+
+    @hourly        script --return --quiet --append --command "/main.ton.dev/scripts/00_validator_msig.sh ${STAKE} 2>&1" /var/ton-work/validator_msig.log
+
 
 ### How validator script works
 
