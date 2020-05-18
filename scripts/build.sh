@@ -62,7 +62,7 @@ cd "${TON_BUILD_DIR}"
 #cmake -DCMAKE_BUILD_TYPE=Release ..
 #cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 #cmake --build .
-cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPORTABLE=ON -DTON_ARCH=corei7-avx
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPORTABLE=ON
 ninja
 echo "INFO: build a node... DONE"
 
