@@ -8,6 +8,7 @@ This HOWTO contains instructions on how to build and configure a validator node 
 |---|:---|:---|:---|:---|
 | Minimal |8|16|1000|1|
 | Recommended |16|32|1000|1| 
+
 SSD disks are recommended for /var/ton-work/db storage.
 ## 2. Prerequisites
 ### 2.1 Set the Environment
