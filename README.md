@@ -88,7 +88,7 @@ Run the validator script (periodically, e.g. each 60 min.):
 
 cron example (run each hour):
 
-    @hourly        script --return --quiet --append --command "/main.ton.dev/scripts/00_validator_msig.sh ${STAKE} 2>&1" /var/ton-work/validator_msig.log
+    @hourly        script --return --quiet --append --command "cd /main.ton.dev/scripts/ && ./validator_msig.sh ${STAKE} 2>&1" /var/ton-work/validator_msig.log
 
 
 ### How validator script works
