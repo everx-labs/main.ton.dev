@@ -42,6 +42,10 @@ if [ "${INSTALL_DEPENDENCIES}" = "yes" ]; then
         ninja-build \
         pkg-config \
         zlib1g-dev
+    curl https://sh.rustup.rs -sSf | sh -s -- -y
+    #shellcheck source=$HOME/.cargo/env
+    . "$HOME/.cargo/env"
+    rustup update
     echo "INFO: install dependencies... DONE"
 fi
 
