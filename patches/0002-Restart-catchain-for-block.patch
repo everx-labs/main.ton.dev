@@ -1,0 +1,24 @@
+From a5830d838c6b88c800dcd8c2bd6b8116dccde0be Mon Sep 17 00:00:00 2001
+From: Leny Kholodov <leonid.k@tonlabs.io>
+Date: Mon, 22 Jun 2020 14:51:46 +0300
+Subject: [PATCH] Restart catchain for block 1066501
+
+---
+ validator-engine/validator-engine.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/validator-engine/validator-engine.cpp b/validator-engine/validator-engine.cpp
+index 3fd1c45..c074e52 100644
+--- a/validator-engine/validator-engine.cpp
++++ b/validator-engine/validator-engine.cpp
+@@ -1204,6 +1204,7 @@ td::Status ValidatorEngine::load_global_config() {
+   if (truncate_seqno_ > 0) {
+     validator_options_.write().truncate_db(truncate_seqno_);
+   }
++  validator_options_.write().add_unsafe_catchain_rotate(1066501, 15547, 1);
+ 
+   std::vector<ton::BlockIdExt> h;
+   for (auto &x : conf.validator_->hardforks_) {
+-- 
+2.19.1
+
