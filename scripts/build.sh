@@ -46,6 +46,7 @@ echo "INFO: clone ${TON_GITHUB_REPO} (${TON_STABLE_GITHUB_COMMIT_ID})... DONE"
 # TODO remove after fix upstream
 cd "${TON_SRC_DIR}"
 git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-Fix-for-neighbours-unreliability.patch"
+git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0002-Restart-catchain-for-block.patch"
 
 echo "INFO: build a node..."
 mkdir -p "${TON_BUILD_DIR}"
