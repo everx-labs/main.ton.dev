@@ -43,10 +43,9 @@ git clone --recursive "${TON_GITHUB_REPO}" "${TON_SRC_DIR}"
 cd "${TON_SRC_DIR}" && git checkout "${TON_STABLE_GITHUB_COMMIT_ID}"
 echo "INFO: clone ${TON_GITHUB_REPO} (${TON_STABLE_GITHUB_COMMIT_ID})... DONE"
 
-# TODO remove after fix upstream
 cd "${TON_SRC_DIR}"
-git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-Fix-for-neighbours-unreliability.patch"
-git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-Restart-catchain-for-block-1066501.-Hardfork-overwri.patch"
+git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-Fixed-building-issue-for-Ubuntu-18.04.patch"
+git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-Patch-for-blocks-filtering-502-503.patch"
 
 echo "INFO: build a node..."
 mkdir -p "${TON_BUILD_DIR}"
