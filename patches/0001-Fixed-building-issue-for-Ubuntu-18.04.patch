@@ -1,0 +1,36 @@
+From c520e37e254e5591b461b5532f455a1edbc352c2 Mon Sep 17 00:00:00 2001
+From: Artem Ryabov <artem.r@tonlabs.io>
+Date: Thu, 25 Jun 2020 17:09:35 +0300
+Subject: [PATCH] Fixed building issue for Ubuntu 18.04
+
+---
+ CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cc83356..334a64b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -385,7 +385,7 @@ add_subdirectory(catchain)
+ add_subdirectory(validator-session)
+ add_subdirectory(validator)
+ add_subdirectory(blockchain-explorer)
+-add_subdirectory(storage)
++# add_subdirectory(storage)
+ add_subdirectory(validator-engine)
+ add_subdirectory(validator-engine-console)
+ add_subdirectory(create-hardfork)
+@@ -449,8 +449,8 @@ if (NOT TON_ONLY_TONLIB)
+ add_executable(test-db test/test-td-main.cpp ${TONDB_TEST_SOURCE})
+ target_link_libraries(test-db PRIVATE ton_db memprof tdfec)
+ 
+-add_executable(test-storage test/test-td-main.cpp ${STORAGE_TEST_SOURCE})
+-target_link_libraries(test-storage PRIVATE storage ton_db memprof tl_api tl-utils fec rldp2)
++# add_executable(test-storage test/test-td-main.cpp ${STORAGE_TEST_SOURCE})
++# target_link_libraries(test-storage PRIVATE storage ton_db memprof tl_api tl-utils fec rldp2)
+ 
+ add_executable(test-rocksdb test/test-rocksdb.cpp)
+ target_link_libraries(test-rocksdb PRIVATE memprof tddb tdutils)
+-- 
+2.24.3 (Apple Git-128)
+
