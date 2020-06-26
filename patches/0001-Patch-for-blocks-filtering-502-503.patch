@@ -167,7 +167,7 @@ index 802159c..3c95e00 100644
 -    last_key_block_id_ = state.last_written_block_id;
 -    last_key_block_ts_ = state.last_written_block_ts;
 +    LOG(ERROR) <<" !!! FORCE CHECK: last_block_id=" << last_block_id_ << ", state.last_block_id=" << state.last_block_id << ", state.last_written_block_id=" << state.last_written_block_id;
-+    if ((last_block_id_.id.seqno >= 1066501 && last_block_id_.id.seqno < 1066510) && state.last_block_id.id.workchain == -1 && state.last_block_id.id.shard == 9223372036854775808ULL)
++    if ((last_block_id_.id.seqno >= 1066500 && last_block_id_.id.seqno < 1066510) && state.last_block_id.id.workchain == -1 && state.last_block_id.id.shard == 9223372036854775808ULL)
 +    {
 +      last_block_id_.id.seqno = 1066501;
 +      last_block_id_.root_hash = from_hex("8E0900AA7D0FAAC5F3751BEE0394868F089F1745935A8A30F6EAC83DBAB3FC3D");
