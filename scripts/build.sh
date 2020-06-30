@@ -45,7 +45,7 @@ echo "INFO: clone ${TON_GITHUB_REPO} (${TON_STABLE_GITHUB_COMMIT_ID})... DONE"
 
 cd "${TON_SRC_DIR}"
 git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-Fixed-building-issue-for-Ubuntu-18.04.patch"
-git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-update-version-in-collator.patch"
+git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0001-Update-validate-query.hpp.patch"
 git apply "${NET_TON_DEV_SRC_TOP_DIR}/patches/0002-update-version-in-collator.patch"
 
 echo "INFO: build a node..."
