@@ -1,0 +1,25 @@
+From 6a4a1d4ad60430bb8f953bd4b8a2310c81d69016 Mon Sep 17 00:00:00 2001
+From: SergeyY <43989533+yaroslavser@users.noreply.github.com>
+Date: Mon, 29 Jun 2020 18:59:07 +0300
+Subject: [PATCH] update version in collator
+
+---
+ validator/impl/collator-impl.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/validator/impl/collator-impl.h b/validator/impl/collator-impl.h
+index 87aa549..2a0e76d 100644
+--- a/validator/impl/collator-impl.h
++++ b/validator/impl/collator-impl.h
+@@ -40,7 +40,7 @@ using td::Ref;
+ 
+ class Collator final : public td::actor::Actor {
+   static constexpr int supported_version() {
+-    return 3;
++    return 4;
+   }
+   static constexpr long long supported_capabilities() {
+     return ton::capCreateStatsEnabled | ton::capBounceMsgBody | ton::capReportVersion | ton::capShortDequeue;
+-- 
+2.24.3 (Apple Git-128)
+
