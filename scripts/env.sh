@@ -26,7 +26,7 @@ export INSTALL_DEPENDENCIES="yes"
 NET_TON_DEV_SRC_TOP_DIR=$(cd "${SCRIPT_DIR}/../" && pwd -P)
 export NET_TON_DEV_SRC_TOP_DIR
 export TON_GITHUB_REPO="https://github.com/tonlabs/ton-1.git"
-export TON_STABLE_GITHUB_COMMIT_ID="c81fcdffe05b95d816966ae4a245bc05fd1bad47"
+export TON_STABLE_GITHUB_COMMIT_ID="9581af666302dc47492ca190341ad1764e17f48d"
 export TON_SRC_DIR="${NET_TON_DEV_SRC_TOP_DIR}/ton"
 export TON_BUILD_DIR="${TON_SRC_DIR}/build"
 export TONOS_CLI_SRC_DIR="${NET_TON_DEV_SRC_TOP_DIR}/tonos-cli"
