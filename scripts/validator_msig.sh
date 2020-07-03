@@ -41,7 +41,7 @@ echo "INFO: MSIG_ADDR = ${MSIG_ADDR}"
 ELECTIONS_WORK_DIR="${KEYS_DIR}/elections"
 mkdir -p "${ELECTIONS_WORK_DIR}"
 
-NANOSTAKE=$("${UTILS_DIR}/tonos-cli" convert tokens "$STAKE")
+NANOSTAKE=$("${UTILS_DIR}/tonos-cli" convert tokens "$STAKE" | tail -1)
 
 "${TON_BUILD_DIR}/lite-client/lite-client" \
     -p "${KEYS_DIR}/liteserver.pub" \
