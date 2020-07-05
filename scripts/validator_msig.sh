@@ -69,45 +69,45 @@ awk '{
 
 election_id=$(cat "${ELECTIONS_WORK_DIR}/election-id")
 
+elector_addr=$(cat "${ELECTIONS_WORK_DIR}/elector-addr-base64")
+
+"${TON_BUILD_DIR}/lite-client/lite-client" \
+    -p "${KEYS_DIR}/liteserver.pub" -a 127.0.0.1:3031 \
+    -rc "runmethod ${elector_addr} compute_returned_stake 0x$(echo "${MSIG_ADDR}" | cut -d ':' -f 2)" \
+    -rc "quit" &>"${ELECTIONS_WORK_DIR}/recover-state"
+
+awk '{
+    if ($1 == "result:") {
+        print $3
+    }
+}' "${ELECTIONS_WORK_DIR}/recover-state" >"${ELECTIONS_WORK_DIR}/recover-amount"
+
+recover_amount=$(cat "${ELECTIONS_WORK_DIR}/recover-amount")
+
+if [ "$recover_amount" != "0" ]; then
+    "${TON_BUILD_DIR}/crypto/fift" -I "${TON_SRC_DIR}/crypto/fift/lib:${TON_SRC_DIR}/crypto/smartcont" -s recover-stake.fif "${ELECTIONS_WORK_DIR}/recover-query.boc"
+
+    recover_query_boc=$(base64 --wrap=0 "${ELECTIONS_WORK_DIR}/recover-query.boc")
+
+    for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
+        echo "INFO: tonos-cli submitTransaction attempt #${i}..."
+        if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
+            "{\"dest\":\"${elector_addr}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${recover_query_boc}\"}" \
+            --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+            --sign "${KEYS_DIR}/msig.keys.json"; then
+            echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
+        else
+            echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
+            break
+        fi
+    done
+
+    date +"INFO: %F %T Recover of $recover_amount GR requested. Waiting 10 seconts before next steps"
+    sleep 10
+fi
+
 if [ "$election_id" == "0" ]; then
     date +"INFO: %F %T No current elections"
-
-    elector_addr=$(cat "${ELECTIONS_WORK_DIR}/elector-addr-base64")
-
-    "${TON_BUILD_DIR}/lite-client/lite-client" \
-        -p "${KEYS_DIR}/liteserver.pub" -a 127.0.0.1:3031 \
-        -rc "runmethod ${elector_addr} compute_returned_stake 0x$(echo "${MSIG_ADDR}" | cut -d ':' -f 2)" \
-        -rc "quit" &>"${ELECTIONS_WORK_DIR}/recover-state"
-
-    awk '{
-        if ($1 == "result:") {
-            print $3
-        }
-    }' "${ELECTIONS_WORK_DIR}/recover-state" >"${ELECTIONS_WORK_DIR}/recover-amount"
-
-    recover_amount=$(cat "${ELECTIONS_WORK_DIR}/recover-amount")
-
-    if [ "$recover_amount" != "0" ]; then
-        "${TON_BUILD_DIR}/crypto/fift" -I "${TON_SRC_DIR}/crypto/fift/lib:${TON_SRC_DIR}/crypto/smartcont" -s recover-stake.fif "${ELECTIONS_WORK_DIR}/recover-query.boc"
-
-        recover_query_boc=$(base64 --wrap=0 "${ELECTIONS_WORK_DIR}/recover-query.boc")
-
-        for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
-            echo "INFO: tonos-cli submitTransaction attempt #${i}..."
-            if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
-                "{\"dest\":\"${elector_addr}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${recover_query_boc}\"}" \
-                --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-                --sign "${KEYS_DIR}/msig.keys.json"; then
-                echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
-            else
-                echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
-                break
-            fi
-        done
-
-        date +"INFO: %F %T Recover of $recover_amount GR requested"
-    fi
-
     echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
     exit
 fi
