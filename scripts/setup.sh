@@ -26,7 +26,7 @@ SETUP_GROUP="$(id --group)"
 echo "INFO: Getting my public IP..."
 until [ "$(echo "${MY_ADDR}" | grep "\." -o | wc -l)" -eq 3 ] ; do
     set +e
-    MY_ADDR="$(curl -sS 2ip.ru)":${ADNL_PORT}
+    MY_ADDR="$(curl -sS ipv4bot.whatismyipaddress.com)":${ADNL_PORT}
     set -e
 done
 echo "INFO: MY_ADDR = ${MY_ADDR}"
