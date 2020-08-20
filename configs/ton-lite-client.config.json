@@ -1,11 +1,11 @@
 {
   "liteservers": [
     {
-      "ip": 221274190,
+      "ip": 869429691,
       "port": 3031,
       "id": {
         "@type": "pub.ed25519",
-        "key": "KNFDwRqYxH+SolHb2rjzRRjgcH309B7qYHaBy8/6n+s="
+        "key": "mBaVO8lmxyhaLW2+FV8rMp8kD711hCAooqtKgMQ1AC4="
       }
     }
   ],
