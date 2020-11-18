@@ -21,6 +21,7 @@ if [ "${INSTALL_DEPENDENCIES}" = "yes" ]; then
         gcc \
         gperf \
         g++ \
+        jq \
         libgflags-dev \
         libmicrohttpd-dev \
         libreadline-dev \
