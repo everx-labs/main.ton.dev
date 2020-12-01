@@ -1,21 +1,6 @@
-#!/bin/bash -eEx
+#!/bin/bash -eE
 
 set -o pipefail
-
-# Copyright 2018-2020 TON DEV SOLUTIONS LTD.
-#
-# Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-# this file except in compliance with the License.  You may obtain a copy of the
-# License at:
-#
-# https://www.ton.dev/licenses
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific TON DEV software governing permissions and limitations
-# under the License.
-#
 
 if [ "$DEBUG" = "yes" ]; then
     set -x
@@ -35,13 +20,12 @@ if [ -z "${STAKE}" ]; then
     exit 1
 fi
 
-TONOS_CLI_SEND_ATTEMPTS="100"
+MAX_FACTOR=${MAX_FACTOR:-3}
+TONOS_CLI_SEND_ATTEMPTS="10"
 MSIG_ADDR=$(cat "${KEYS_DIR}/${VALIDATOR_NAME}.addr")
 echo "INFO: MSIG_ADDR = ${MSIG_ADDR}"
 ELECTIONS_WORK_DIR="${KEYS_DIR}/elections"
 mkdir -p "${ELECTIONS_WORK_DIR}"
-
-NANOSTAKE=$("${UTILS_DIR}/tonos-cli" convert tokens "$STAKE" | tail -1)
 
 "${TON_BUILD_DIR}/lite-client/lite-client" \
     -p "${KEYS_DIR}/liteserver.pub" \
@@ -69,52 +53,57 @@ awk '{
 
 election_id=$(cat "${ELECTIONS_WORK_DIR}/election-id")
 
+elector_addr=$(cat "${ELECTIONS_WORK_DIR}/elector-addr-base64")
+
+"${TON_BUILD_DIR}/lite-client/lite-client" \
+    -p "${KEYS_DIR}/liteserver.pub" -a 127.0.0.1:3031 \
+    -rc "runmethod ${elector_addr} compute_returned_stake 0x$(echo "${MSIG_ADDR}" | cut -d ':' -f 2)" \
+    -rc "quit" &>"${ELECTIONS_WORK_DIR}/recover-state"
+
+awk '{
+    if ($1 == "result:") {
+        print $3
+    }
+}' "${ELECTIONS_WORK_DIR}/recover-state" >"${ELECTIONS_WORK_DIR}/recover-amount"
+
+recover_amount=$(cat "${ELECTIONS_WORK_DIR}/recover-amount")
+echo "INFO: recover_amount = ${recover_amount} nanotokens"
+
+if [ "$recover_amount" != "0" ]; then
+    "${TON_BUILD_DIR}/crypto/fift" -I "${TON_SRC_DIR}/crypto/fift/lib:${TON_SRC_DIR}/crypto/smartcont" -s recover-stake.fif "${ELECTIONS_WORK_DIR}/recover-query.boc"
+
+    recover_query_boc=$(base64 --wrap=0 "${ELECTIONS_WORK_DIR}/recover-query.boc")
+
+    for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
+        echo "INFO: tonos-cli submitTransaction attempt #${i}..."
+        set -x
+        if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
+            "{\"dest\":\"${elector_addr}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${recover_query_boc}\"}" \
+            --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
+            --sign "${KEYS_DIR}/msig.keys.json"; then
+            echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
+        else
+            echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
+            break
+        fi
+        set +x
+    done
+
+    date +"INFO: %F %T Recover of $recover_amount GR requested"
+    exit 0
+else
+    echo "INFO: nothing to recover"
+fi
+
 if [ "$election_id" == "0" ]; then
     date +"INFO: %F %T No current elections"
-
-    elector_addr=$(cat "${ELECTIONS_WORK_DIR}/elector-addr-base64")
-
-    "${TON_BUILD_DIR}/lite-client/lite-client" \
-        -p "${KEYS_DIR}/liteserver.pub" -a 127.0.0.1:3031 \
-        -rc "runmethod ${elector_addr} compute_returned_stake 0x$(echo "${MSIG_ADDR}" | cut -d ':' -f 2)" \
-        -rc "quit" &>"${ELECTIONS_WORK_DIR}/recover-state"
-
-    awk '{
-        if ($1 == "result:") {
-            print $3
-        }
-    }' "${ELECTIONS_WORK_DIR}/recover-state" >"${ELECTIONS_WORK_DIR}/recover-amount"
-
-    recover_amount=$(cat "${ELECTIONS_WORK_DIR}/recover-amount")
-
-    if [ "$recover_amount" != "0" ]; then
-        "${TON_BUILD_DIR}/crypto/fift" -I "${TON_SRC_DIR}/crypto/fift/lib:${TON_SRC_DIR}/crypto/smartcont" -s recover-stake.fif "${ELECTIONS_WORK_DIR}/recover-query.boc"
-
-        recover_query_boc=$(base64 --wrap=0 "${ELECTIONS_WORK_DIR}/recover-query.boc")
-
-        for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
-            echo "INFO: tonos-cli submitTransaction attempt #${i}..."
-            if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
-                "{\"dest\":\"${elector_addr}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${recover_query_boc}\"}" \
-                --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
-                --sign "${KEYS_DIR}/msig.keys.json"; then
-                echo "INFO: tonos-cli submitTransaction attempt #${i}... FAIL"
-            else
-                echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
-                break
-            fi
-        done
-
-        date +"INFO: %F %T Recover of $recover_amount GR requested"
-    fi
-
     echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
-    exit
+    exit 0
 fi
 
 if [ -f "${ELECTIONS_WORK_DIR}/stop-election" ]; then
     echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
-    exit
+    exit 0
 fi
 
 if [ -f "${ELECTIONS_WORK_DIR}/active-election-id" ]; then
@@ -122,7 +111,7 @@ if [ -f "${ELECTIONS_WORK_DIR}/active-election-id" ]; then
     if [ "$active_election_id" = "$election_id" ]; then
         date +"INFO: %F %T Elections $election_id, already submitted"
         echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
-        exit
+        exit 0
     fi
 fi
 
@@ -150,7 +139,8 @@ date +"INFO: %F %T Elections $election_id"
     &>"${ELECTIONS_WORK_DIR}/elector-params"
 
 awk -v validator="${VALIDATOR_NAME}" -v wallet_addr="$MSIG_ADDR" -v TON_BUILD_DIR="${TON_BUILD_DIR}" \
-    -v KEYS_DIR="${KEYS_DIR}" -v ELECTIONS_WORK_DIR="${ELECTIONS_WORK_DIR}" -v TON_SRC_DIR="${TON_SRC_DIR}" '{
+    -v KEYS_DIR="${KEYS_DIR}" -v ELECTIONS_WORK_DIR="${ELECTIONS_WORK_DIR}" -v TON_SRC_DIR="${TON_SRC_DIR}" \
+    -v MAX_FACTOR="${MAX_FACTOR}" '{
     if (NR == 1) {
         election_start = $1 + 0
     } else if (($1 == "created") && ($2 == "new") && ($3 == "key")) {
@@ -180,7 +170,7 @@ awk -v validator="${VALIDATOR_NAME}" -v wallet_addr="$MSIG_ADDR" -v TON_BUILD_DI
         printf TON_BUILD_DIR "/crypto/fift ";
         printf "-I " TON_SRC_DIR "/crypto/fift/lib:" TON_SRC_DIR "/crypto/smartcont ";
         printf "-s validator-elect-req.fif " wallet_addr;
-        printf " " election_start " 2 " key_adnl " " ELECTIONS_WORK_DIR "/validator-to-sign.bin ";
+        printf " " election_start " " MAX_FACTOR " " key_adnl " " ELECTIONS_WORK_DIR "/validator-to-sign.bin ";
         print  "> " ELECTIONS_WORK_DIR "/" validator "-request-dump"
     }
 }' "${ELECTIONS_WORK_DIR}/election-id" "${ELECTIONS_WORK_DIR}/${VALIDATOR_NAME}-election-key" \
@@ -202,7 +192,7 @@ awk -v validator="${VALIDATOR_NAME}" -v TON_BUILD_DIR="${TON_BUILD_DIR}" -v KEYS
 bash "${ELECTIONS_WORK_DIR}/elector-run2"
 
 awk -v validator="${VALIDATOR_NAME}" -v wallet_addr="$MSIG_ADDR" -v TON_BUILD_DIR="${TON_BUILD_DIR}" \
-    -v ELECTIONS_WORK_DIR="${ELECTIONS_WORK_DIR}" -v TON_SRC_DIR="${TON_SRC_DIR}" '{
+    -v ELECTIONS_WORK_DIR="${ELECTIONS_WORK_DIR}" -v TON_SRC_DIR="${TON_SRC_DIR}" -v MAX_FACTOR="${MAX_FACTOR}" '{
     if (NR == 1) {
         election_start = $1 + 0
     } else if (($1 == "got") && ($2 == "public") && ($3 == "key:")) {
@@ -212,7 +202,7 @@ awk -v validator="${VALIDATOR_NAME}" -v wallet_addr="$MSIG_ADDR" -v TON_BUILD_DI
     } else if (($1 == "created") && ($2 == "new") && ($3 == "key")) {
         printf TON_BUILD_DIR "/crypto/fift ";
         printf "-I " TON_SRC_DIR "/crypto/fift/lib:" TON_SRC_DIR "/crypto/smartcont ";
-        printf "-s validator-elect-signed.fif " wallet_addr " " election_start " 2 " $4;
+        printf "-s validator-elect-signed.fif " wallet_addr " " election_start " " MAX_FACTOR " " $4;
         printf " " key " " signature " " ELECTIONS_WORK_DIR "/validator-query.boc ";
         print  "> " ELECTIONS_WORK_DIR "/" validator "-request-dump2"
     }
@@ -224,8 +214,35 @@ bash "${ELECTIONS_WORK_DIR}/elector-run3"
 validator_query_boc=$(base64 --wrap=0 "${ELECTIONS_WORK_DIR}/validator-query.boc")
 elector_addr=$(cat "${ELECTIONS_WORK_DIR}/elector-addr-base64")
 
+VALIDATOR_ACTUAL_BALANCE=$("${UTILS_DIR}/tonos-cli" account "${MSIG_ADDR}" | grep balance | awk '{print $2}') # in nano tokens
+VALIDATOR_ACTUAL_BALANCE=$((VALIDATOR_ACTUAL_BALANCE / 1000000000))                                         # in tokens
+echo "INFO: ${MSIG_ADDR} VALIDATOR_ACTUAL_BALANCE = ${VALIDATOR_ACTUAL_BALANCE} tokens"
+
+echo "INFO: STAKE = $STAKE tokens"
+
+if [ "$STAKE" -ge ${VALIDATOR_ACTUAL_BALANCE} ]; then
+    echo "ERROR: not enough tokens in ${MSIG_ADDR} wallet"
+    echo "INFO: VALIDATOR_ACTUAL_BALANCE = ${VALIDATOR_ACTUAL_BALANCE}"
+    echo "INFO: $(basename "$0") END $(date +%s) / $(date)"
+    exit 1
+fi
+
+MIN_STAKE=$("${TON_BUILD_DIR}/lite-client/lite-client" -p "${KEYS_DIR}/liteserver.pub" -a 127.0.0.1:3031 \
+    -rc 'getconfig 17' -rc quit 2>&1 | grep -C 1 min_stake | grep value | awk -F: '{print $4}' | tr -d ')') # in nanotokens
+MIN_STAKE=$((MIN_STAKE / 1000000000)) # in tokens
+echo "INFO: MIN_STAKE = ${MIN_STAKE} tokens"
+
+if [ "$STAKE" -lt "${MIN_STAKE}" ]; then
+    echo "ERROR: STAKE ($STAKE tokens) is less than MIN_STAKE (${MIN_STAKE} tokens)"
+    exit 1
+fi
+
+NANOSTAKE=$("${UTILS_DIR}/tonos-cli" convert tokens "$STAKE" | tail -1)
+echo "INFO: NANOSTAKE = $NANOSTAKE nanotokens"
+
 for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
     echo "INFO: tonos-cli submitTransaction attempt #${i}..."
+    set -x
     if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
         "{\"dest\":\"${elector_addr}\",\"value\":\"${NANOSTAKE}\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${validator_query_boc}\"}" \
         --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
@@ -235,6 +252,7 @@ for i in $(seq ${TONOS_CLI_SEND_ATTEMPTS}); do
         echo "INFO: tonos-cli submitTransaction attempt #${i}... PASS"
         break
     fi
+    set +x
 done
 
 date +"INFO: %F %T prepared for elections"
