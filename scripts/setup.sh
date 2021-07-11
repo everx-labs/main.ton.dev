@@ -35,15 +35,19 @@ chmod 700 "${KEYS_DIR}"
 
 cd "${KEYS_DIR}"
 
-"${UTILS_DIR}/generate-random-id" -m keys -n server > "${KEYS_DIR}/keys_s"
-"${UTILS_DIR}/generate-random-id" -m keys -n liteserver > "${KEYS_DIR}/keys_l"
-"${UTILS_DIR}/generate-random-id" -m keys -n client > "${KEYS_DIR}/keys_c"
+declare -A KEYS=( [server]=keys_s [liteserver]=keys_l [client]=keys_c )
+for k in "${!KEYS[@]}"; do
+    if [ ! -f "${KEYS_DIR}/$k" ] || [ ! -f "${KEYS_DIR}/${KEYS[$k]}" ]; then
+        "${UTILS_DIR}/generate-random-id" -m keys -n "${KEYS_DIR}/$k" > "${KEYS_DIR}/${KEYS[$k]}"
+    fi
+done
+
 chmod 600 "${KEYS_DIR}"/*
 
 find "${KEYS_DIR}"
 
-mv "${KEYS_DIR}/server" "${TON_WORK_DIR}/db/keyring/$(awk '{print $1}' "${KEYS_DIR}/keys_s")"
-mv "${KEYS_DIR}/liteserver" "${TON_WORK_DIR}/db/keyring/$(awk '{print $1}' "${KEYS_DIR}/keys_l")"
+cp "${KEYS_DIR}/server" "${TON_WORK_DIR}/db/keyring/$(awk '{print $1}' "${KEYS_DIR}/keys_s")"
+cp "${KEYS_DIR}/liteserver" "${TON_WORK_DIR}/db/keyring/$(awk '{print $1}' "${KEYS_DIR}/keys_l")"
 
 awk '{
     if (NR == 1) {
