@@ -23,7 +23,11 @@ done
 NODE_ADDRESS="${IP_ADDRESS}:${ADNL_PORT}"
 echo "INFO: NODE_ADDRESS = ${NODE_ADDRESS}"
 
-sudo rm -rf "${TON_WORK_DIR}"
+if [ -d "${TON_WORK_DIR}" ]; then
+    echo "ERROR: ${TON_WORK_DIR} exists, remove it (if needed) before new node setup"
+    exit 1
+fi
+
 sudo mkdir -p "${TON_WORK_DIR}"
 sudo chown "${SETUP_USER}:${SETUP_GROUP}" "${TON_WORK_DIR}"
 mkdir -p "${TON_WORK_DIR}/etc"

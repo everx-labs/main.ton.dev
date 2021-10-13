@@ -37,7 +37,10 @@ if [ "${INSTALL_DEPENDENCIES}" = "yes" ]; then
     echo "INFO: install dependencies... DONE"
 fi
 
-rm -rf "${TON_SRC_DIR}"
+if [ -d "${TON_SRC_DIR}" ]; then
+    echo "ERROR: ${TON_SRC_DIR} exists, remove it (if needed) before new node build"
+    exit 1
+fi
 
 echo "INFO: clone ${TON_GITHUB_REPO} (${TON_STABLE_GITHUB_COMMIT_ID})..."
 git clone --recursive "${TON_GITHUB_REPO}" "${TON_SRC_DIR}"
@@ -63,7 +66,10 @@ cp "${NET_TON_DEV_SRC_TOP_DIR}/utils/convert_address/target/release/convert_addr
 echo "INFO: build utils (convert_address)... DONE"
 
 echo "INFO: build utils (tonos-cli)..."
-rm -rf "${TONOS_CLI_SRC_DIR}"
+if [ -d "${TONOS_CLI_SRC_DIR}" ]; then
+    echo "ERROR: ${TONOS_CLI_SRC_DIR} exists, remove it (if needed) before new node build"
+    exit 1
+fi
 git clone https://github.com/tonlabs/tonos-cli.git "${TONOS_CLI_SRC_DIR}"
 cd "${TONOS_CLI_SRC_DIR}"
 cargo update
