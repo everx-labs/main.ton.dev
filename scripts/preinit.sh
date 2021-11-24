@@ -17,7 +17,7 @@ mkdir -p "${TMP_DIR}"
 echo "INFO: Getting my public IP..."
 until [ "$(echo "${IP_ADDRESS}" | grep "\." -o | wc -l)" -eq 3 ]; do
     set +e
-    IP_ADDRESS="$(curl -sS ipv4bot.whatismyipaddress.com)"
+    IP_ADDRESS="$(curl -sS https://ip.me/)"
     set -e
 done
 NODE_ADDRESS="${IP_ADDRESS}:${ADNL_PORT}"
