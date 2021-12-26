@@ -22,7 +22,7 @@ else
 fi
 
 function f_get_ton_global_config_json() {
-    curl -sS "https://raw.githubusercontent.com/tonlabs/rustnet.ton.dev/main/configs/ton-global.config.json" -o "${TON_NODE_CONFIGS_DIR}/ton-global.config.json"
+    curl -sS "https://raw.githubusercontent.com/tonlabs/main.ton.dev/master/configs/ton-global.config.json" -o "${TON_NODE_CONFIGS_DIR}/ton-global.config.json"
 }
 
 function f_iscron() {
