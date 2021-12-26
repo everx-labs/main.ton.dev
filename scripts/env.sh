@@ -1,30 +1,26 @@
 #!/bin/bash -eE
 
-if [ "$DEBUG" = "yes" ]
-then
+DEBUG=${DEBUG:-no}
+
+if [ "$DEBUG" = "yes" ]; then
     set -x
 fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
-# Verified on Ubuntu 18.04
-export INSTALL_DEPENDENCIES="yes"
-#NET_TON_DEV_SRC_TOP_DIR=$(git rev-parse --show-toplevel)
-NET_TON_DEV_SRC_TOP_DIR=$(cd "${SCRIPT_DIR}/../" && pwd -P)
-export NET_TON_DEV_SRC_TOP_DIR
-export TON_GITHUB_REPO="https://github.com/tonlabs/ton-1.git"
-export TON_STABLE_GITHUB_COMMIT_ID="69aef50352a21b13ba892d1a0944ea8c7bc0cbcf"
-export TON_SRC_DIR="${NET_TON_DEV_SRC_TOP_DIR}/ton"
-export TON_BUILD_DIR="${TON_SRC_DIR}/build"
-export TONOS_CLI_SRC_DIR="${NET_TON_DEV_SRC_TOP_DIR}/tonos-cli"
-export TON_WORK_DIR="/var/ton-work"
-export UTILS_DIR="${TON_BUILD_DIR}/utils"
-export KEYS_DIR="$HOME/ton-keys"
-export CONFIGS_DIR="${NET_TON_DEV_SRC_TOP_DIR}/configs"
-export ADNL_PORT="30310"
-HOSTNAME=$(hostname -s)
-export HOSTNAME
-export VALIDATOR_NAME="$HOSTNAME"
-export PATH="${UTILS_DIR}:$PATH"
-export LITESERVER_IP="127.0.0.1"
-export LITESERVER_PORT="3031"
-export ENGINE_ADDITIONAL_PARAMS=""
+export SCRIPT_DIR
+SRC_TOP_DIR=$(cd "${SCRIPT_DIR}/../" && pwd -P)
+export SRC_TOP_DIR
+export DOCKER_COMPOSE_DIR="${SRC_TOP_DIR}/docker-compose"
+export ENABLE_VALIDATE="yes"
+export CLEAN_HOST=${CLEAN_HOST:-yes}
+export COMPOSE_HTTP_TIMEOUT=120 # in sec, 60 sec - default
+HOSTNAME=$(hostname -f)
+export TON_NODE_GITHUB_REPO="https://github.com/tonlabs/ton-labs-node.git"
+export TON_NODE_GITHUB_COMMIT_ID="b7702c1504e8a8a9f8231fa794043de29f4375ae"
+export TON_NODE_TOOLS_GITHUB_REPO="https://github.com/tonlabs/ton-labs-node-tools.git"
+export TON_NODE_TOOLS_GITHUB_COMMIT_ID="183bb2a777db5c1e3186d26904dfcc3d8bb9a1b5"
+export TONOS_CLI_GITHUB_REPO="https://github.com/tonlabs/tonos-cli.git"
+export TONOS_CLI_GITHUB_COMMIT_ID="master"
+export DEPOOL_ENABLE="no"
+# Calculated dynamically (total RAM - 1GB), uncomment if you want to agjust it manually
+#export NODE_MEM_LIMIT="127G"

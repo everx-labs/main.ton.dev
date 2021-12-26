@@ -1,0 +1,7 @@
+mappings:
+  - match: "rnode.shards_client_mc_block"
+    name: "rnode_shards_client_mc_block"
+    match_metric_type: gauge
+  - match: "rnode.last_applied_mc_block"
+    name: "rnode_last_applied_mc_block"
+    match_metric_type: gauge

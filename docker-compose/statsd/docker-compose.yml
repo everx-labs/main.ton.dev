@@ -1,0 +1,23 @@
+version: '2.2'
+services:
+  statsd:
+    image: "${IMAGE}"
+    container_name: statsd
+    restart: unless-stopped
+    expose:
+      - "${UDP_PORT}/udp"
+    ports:
+      - "${IntIP}:${TCP_PORT}:${TCP_PORT}"
+    networks:
+      - proxy_nw
+    volumes:
+      - ./statsd-mapping.yaml:/statsd-mappings/statsd-mapping.yaml
+    command: [ "${ARGS}" ]
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "10"
+networks:
+  proxy_nw:
+    external: true
