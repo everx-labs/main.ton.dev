@@ -169,9 +169,9 @@ The script generating validator election requests (directly through multisig wal
 Adjust (specify new commit ID) `main.ton.dev/scripts/env.sh`:
 ```bash
 export TON_NODE_GITHUB_REPO="https://github.com/tonlabs/ton-labs-node.git"
-export TON_NODE_GITHUB_COMMIT_ID="b7702c1504e8a8a9f8231fa794043de29f4375ae"
+export TON_NODE_GITHUB_COMMIT_ID="master"
 export TON_NODE_TOOLS_GITHUB_REPO="https://github.com/tonlabs/ton-labs-node-tools.git"
-export TON_NODE_TOOLS_GITHUB_COMMIT_ID="183bb2a777db5c1e3186d26904dfcc3d8bb9a1b5"
+export TON_NODE_TOOLS_GITHUB_COMMIT_ID="master"
 export TONOS_CLI_GITHUB_REPO="https://github.com/tonlabs/tonos-cli.git"
 export TONOS_CLI_GITHUB_COMMIT_ID="master"
 ```
