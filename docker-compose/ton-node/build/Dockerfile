@@ -1,4 +1,4 @@
-ARG RUST_VERSION=1.55.0
+ARG RUST_VERSION=1.58.0
 
 FROM ubuntu:18.04 as build
 
