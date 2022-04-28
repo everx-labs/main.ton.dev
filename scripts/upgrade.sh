@@ -6,6 +6,11 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 # shellcheck source=env.sh
 . "${SCRIPT_DIR}/env.sh"
 
+if ! command -v jq >/dev/null; then
+    echo "ERROR: please install jq"
+    exit 1
+fi
+
 rm -rf "${DOCKER_COMPOSE_DIR}/ton-node/build/ton-node"
 cd "${DOCKER_COMPOSE_DIR}/ton-node/build" && git clone --recursive "${TON_NODE_GITHUB_REPO}" ton-node
 cd "${DOCKER_COMPOSE_DIR}/ton-node/build/ton-node" && git checkout "${TON_NODE_GITHUB_COMMIT_ID}"
@@ -21,6 +26,9 @@ cd "${DOCKER_COMPOSE_DIR}/ton-node/build/tonos-cli" && git checkout "${TONOS_CLI
 NODE_MEM_LIMIT_DYNAMIC="$((($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1000 / 1000 - 1)))G"
 NODE_MEM_LIMIT="${NODE_MEM_LIMIT:-${NODE_MEM_LIMIT_DYNAMIC}}"
 sed -i "s|MEM_LIMIT=.*|MEM_LIMIT=${NODE_MEM_LIMIT}|g" "${DOCKER_COMPOSE_DIR}/ton-node/.env"
+
+cd "${DOCKER_COMPOSE_DIR}/ton-node/configs/" && jq \".restore_db = true\" ./config.json >./config.json.tmp
+cd "${DOCKER_COMPOSE_DIR}/ton-node/configs/" && mv ./config.json.tmp ./config.json
 
 cd "${DOCKER_COMPOSE_DIR}/ton-node/" && docker-compose build --no-cache
 cd "${DOCKER_COMPOSE_DIR}/ton-node/" && docker-compose down
