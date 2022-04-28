@@ -27,8 +27,8 @@ NODE_MEM_LIMIT_DYNAMIC="$((($(grep MemTotal /proc/meminfo | awk '{print $2}') / 
 NODE_MEM_LIMIT="${NODE_MEM_LIMIT:-${NODE_MEM_LIMIT_DYNAMIC}}"
 sed -i "s|MEM_LIMIT=.*|MEM_LIMIT=${NODE_MEM_LIMIT}|g" "${DOCKER_COMPOSE_DIR}/ton-node/.env"
 
-cd "${DOCKER_COMPOSE_DIR}/ton-node/configs/" && jq \".restore_db = true\" ./config.json >./config.json.tmp
-cd "${DOCKER_COMPOSE_DIR}/ton-node/configs/" && mv ./config.json.tmp ./config.json
+cd "${DOCKER_COMPOSE_DIR}/ton-node/configs/" && jq '.restore_db = true' ./config.json >./config.json.tmp
+cd "${DOCKER_COMPOSE_DIR}/ton-node/configs/" && mv -f ./config.json.tmp ./config.json
 
 cd "${DOCKER_COMPOSE_DIR}/ton-node/" && docker-compose build --no-cache
 cd "${DOCKER_COMPOSE_DIR}/ton-node/" && docker-compose down
