@@ -666,7 +666,7 @@ submit_stake() {
             exit_and_clean 1 $LINENO
         fi
 
-        NANOSTAKE=$("${UTILS_DIR}/tonos-cli" convert tokens "$STAKE" | tail -1)
+        NANOSTAKE=$((STAKE * 1000000000))
         echo "INFO: NANOSTAKE = $NANOSTAKE nanotokens"
 
         if [ -z "${NANOSTAKE}" ]; then
