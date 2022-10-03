@@ -89,6 +89,7 @@ init_env() {
     ELECTOR_ADDR="-1:3333333333333333333333333333333333333333333333333333333333333333"
     TON_BUILD_DIR=""
     BLOCKCHAIN_TIMEOUT="60"
+    TONOS_CLI_TIMEOUT="120s"
 
     if [ "${RUST_NET_ENABLE}" = "yes" ]; then
         TON_NODE_ROOT="/ton-node"
@@ -112,6 +113,34 @@ init_env() {
         MSIG_ADDR_FILE="${KEYS_DIR}/${VALIDATOR_NAME}.addr"
         if [ "${DEPOOL_ENABLE}" = "yes" ]; then
             DEPOOL_ADDR_FILE="${KEYS_DIR}/depool.addr"
+        fi
+    fi
+
+    # Check node is synced
+    if [ "${RUST_NET_ENABLE}" = "yes" ]; then
+        CONSOLE_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json --json --cmd getstats)
+        MASTER_TIMEDIFF=$(echo "${CONSOLE_OUTPUT}" | jq .timediff)       # sec
+        SHARD_TIMEDIFF=$(echo "${CONSOLE_OUTPUT}" | jq .shards_timediff) # sec
+        TIMEDIFF_THRESHOLD="15"                                          # sec
+
+        if [ -z "${MASTER_TIMEDIFF}" ] || [ "${MASTER_TIMEDIFF}" = "null" ]; then
+            echo "ERROR: unable to detect MASTER_TIMEDIFF, check '${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json --json --cmd getstats'"
+            exit_and_clean 1 $LINENO
+        fi
+
+        if [ -z "${SHARD_TIMEDIFF}" ] || [ "${SHARD_TIMEDIFF}" = "null" ]; then
+            echo "ERROR: unable to detect SHARD_TIMEDIFF, check '${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json --json --cmd getstats'"
+            exit_and_clean 1 $LINENO
+        fi
+
+        if [ "${MASTER_TIMEDIFF}" -gt "${TIMEDIFF_THRESHOLD}" ]; then
+            echo "ERROR: node isn't synced, MASTER_TIMEDIFF = ${MASTER_TIMEDIFF}"
+            exit_and_clean 1 $LINENO
+        fi
+
+        if [ "${SHARD_TIMEDIFF}" -gt "${TIMEDIFF_THRESHOLD}" ]; then
+            echo "ERROR: node isn't synced, SHARD_TIMEDIFF = ${SHARD_TIMEDIFF}"
+            exit_and_clean 1 $LINENO
         fi
     fi
 
@@ -205,11 +234,6 @@ check_env() {
 
     # '--lifetime 500' is needed for unstable front
     ${UTILS_DIR}/tonos-cli config --lifetime 500
-
-    if [ -n "${SDK_ENDPOINT_URL_LIST}" ]; then
-        # shellcheck disable=SC2086
-        ${UTILS_DIR}/tonos-cli config endpoint add ${SDK_URL} ${SDK_ENDPOINT_URL_LIST}
-    fi
 }
 
 recover_stake() {
@@ -220,29 +244,34 @@ recover_stake() {
 
     case ${VALIDATOR_TYPE} in
     "sdk")
-        TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli account "${MSIG_ADDR}")
+        TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli account "${MSIG_ADDR}")
         VALIDATOR_ACTUAL_BALANCE_NANO=$(echo "${TONOS_CLI_OUTPUT}" | awk '/balance/ {print $2}') # in nano tokens
         ;;
     "console")
-        TONOS_CLI_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
-        VALIDATOR_ACTUAL_BALANCE_NANO=$(echo "${TONOS_CLI_OUTPUT}" | jq -r '.balance')
+        CONSOLE_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
+        VALIDATOR_ACTUAL_BALANCE_NANO=$(echo "${CONSOLE_OUTPUT}" | jq -r '.balance')
         ;;
     esac
+
+    if [ -z "${VALIDATOR_ACTUAL_BALANCE_NANO}" ]; then
+        echo "ERROR: unable to get validator actual balance"
+        exit_and_clean 1 $LINENO
+    fi
 
     MSIG_ADDR_HEX="0x$(echo "${MSIG_ADDR}" | cut -d ':' -f 2)"
 
     case ${ELECTOR_TYPE} in
     "fift")
-        TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli runget ${ELECTOR_ADDR} compute_returned_stake "${MSIG_ADDR_HEX}" 2>&1)
+        TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli runget ${ELECTOR_ADDR} compute_returned_stake "${MSIG_ADDR_HEX}" 2>&1)
         RECOVER_AMOUNT_HEX=$(echo "${TONOS_CLI_OUTPUT}" | awk -F'"' '/Result:/ {print $2}')
         ;;
     "solidity")
         case ${VALIDATOR_TYPE} in
         "sdk")
-            TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli run ${ELECTOR_ADDR} compute_returned_stake "{\"wallet_addr\":\"${MSIG_ADDR_HEX}\"}" --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
+            TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli run ${ELECTOR_ADDR} compute_returned_stake "{\"wallet_addr\":\"${MSIG_ADDR_HEX}\"}" --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
             ;;
         "console")
-            TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli run --boc "${TMP_DIR}/elector_account.boc" compute_returned_stake "{\"wallet_addr\":\"${MSIG_ADDR_HEX}\"}" --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
+            TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli run --boc "${TMP_DIR}/elector_account.boc" compute_returned_stake "{\"wallet_addr\":\"${MSIG_ADDR_HEX}\"}" --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
             ;;
         esac
         RECOVER_AMOUNT_HEX=$(echo "${TONOS_CLI_OUTPUT}" | awk '/value0/ {print $2}' | tr -d '"')
@@ -292,7 +321,7 @@ recover_stake() {
         case ${VALIDATOR_TYPE} in
         "sdk")
             echo "INFO: tonos-cli call submitTransaction attempt..."
-            if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
+            if ! timeout ${TONOS_CLI_TIMEOUT} "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
                 "{\"dest\":\"${ELECTOR_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${RECOVER_QUERY_BOC}\"}" \
                 --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
                 --sign "${KEYS_DIR}/msig.keys.json"; then
@@ -321,8 +350,8 @@ recover_stake() {
 
             sleep ${BLOCKCHAIN_TIMEOUT}
 
-            TONOS_CLI_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
-            VALIDATOR_NEW_BALANCE_NANO=$(echo "${TONOS_CLI_OUTPUT}" | jq -r '.balance')
+            CONSOLE_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
+            VALIDATOR_NEW_BALANCE_NANO=$(echo "${CONSOLE_OUTPUT}" | jq -r '.balance')
             VALIDATOR_BALANCE_DIFF=$((VALIDATOR_NEW_BALANCE_NANO - VALIDATOR_ACTUAL_BALANCE_NANO))
 
             # 10000 tokens - minimal stake
@@ -344,16 +373,16 @@ recover_stake() {
 prepare_for_elections() {
     case ${ELECTOR_TYPE} in
     "fift")
-        TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli runget ${ELECTOR_ADDR} active_election_id 2>&1)
+        TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli runget ${ELECTOR_ADDR} active_election_id 2>&1)
         ACTIVE_ELECTION_ID_HEX=$(echo "${TONOS_CLI_OUTPUT}" | awk -F'"' '/Result:/ {print $2}')
         ;;
     "solidity")
         case ${VALIDATOR_TYPE} in
         "sdk")
-            TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli run ${ELECTOR_ADDR} active_election_id {} --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
+            TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli run ${ELECTOR_ADDR} active_election_id {} --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
             ;;
         "console")
-            TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli run --boc "${TMP_DIR}/elector_account.boc" active_election_id {} --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
+            TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli run --boc "${TMP_DIR}/elector_account.boc" active_election_id {} --abi ${CONFIGS_DIR}/Elector.abi.json 2>&1)
             ;;
         esac
         ACTIVE_ELECTION_ID_HEX=$(echo "${TONOS_CLI_OUTPUT}" | awk '/value0/ {print $2}' | tr -d '"')
@@ -386,7 +415,7 @@ prepare_for_elections() {
     mkdir -p "${ELECTIONS_WORK_DIR}"
 
     if [ "${DEPOOL_ENABLE}" = "yes" ]; then
-        "${UTILS_DIR}/tonos-cli" depool --addr "${DEPOOL_ADDR}" events >"${ELECTIONS_WORK_DIR}/events.txt" 2>&1
+        timeout ${TONOS_CLI_TIMEOUT} "${UTILS_DIR}/tonos-cli" depool --addr "${DEPOOL_ADDR}" events >"${ELECTIONS_WORK_DIR}/events.txt" 2>&1
 
         set +eE
         set +o pipefail
@@ -584,12 +613,12 @@ create_elector_request() {
 submit_stake() {
     case ${VALIDATOR_TYPE} in
     "sdk")
-        TONOS_CLI_OUTPUT=$(${UTILS_DIR}/tonos-cli account "${MSIG_ADDR}")
+        TONOS_CLI_OUTPUT=$(timeout ${TONOS_CLI_TIMEOUT} ${UTILS_DIR}/tonos-cli account "${MSIG_ADDR}")
         VALIDATOR_ACTUAL_BALANCE_NANO=$(echo "${TONOS_CLI_OUTPUT}" | awk '/balance/ {print $2}') # in nano tokens
         ;;
     "console")
-        TONOS_CLI_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
-        VALIDATOR_ACTUAL_BALANCE_NANO=$(echo "${TONOS_CLI_OUTPUT}" | jq -r '.balance')
+        CONSOLE_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
+        VALIDATOR_ACTUAL_BALANCE_NANO=$(echo "${CONSOLE_OUTPUT}" | jq -r '.balance')
         ;;
     esac
 
@@ -610,7 +639,7 @@ submit_stake() {
 
         echo "INFO: tonos-cli submitTransaction attempt..."
         set -x
-        if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
+        if ! timeout ${TONOS_CLI_TIMEOUT} "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
             "{\"dest\":\"${DEPOOL_ADDR}\",\"value\":\"1000000000\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
             --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
             --sign "${KEYS_DIR}/msig.keys.json"; then
@@ -678,7 +707,7 @@ submit_stake() {
         case ${VALIDATOR_TYPE} in
         "sdk")
             echo "INFO: tonos-cli submitTransaction attempt..."
-            if ! "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
+            if ! timeout ${TONOS_CLI_TIMEOUT} "${UTILS_DIR}/tonos-cli" call "${MSIG_ADDR}" submitTransaction \
                 "{\"dest\":\"${ELECTOR_ADDR}\",\"value\":\"${NANOSTAKE}\",\"bounce\":true,\"allBalance\":false,\"payload\":\"${VALIDATOR_QUERY_BOC}\"}" \
                 --abi "${CONFIGS_DIR}/SafeMultisigWallet.abi.json" \
                 --sign "${KEYS_DIR}/msig.keys.json"; then
@@ -707,8 +736,8 @@ submit_stake() {
 
                 sleep ${BLOCKCHAIN_TIMEOUT}
 
-                TONOS_CLI_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
-                VALIDATOR_NEW_BALANCE_NANO=$(echo "${TONOS_CLI_OUTPUT}" | jq -r '.balance')
+                CONSOLE_OUTPUT=$(${UTILS_DIR}/console -C ${CONFIGS_DIR}/console.json -j -c "getaccount ${MSIG_ADDR}")
+                VALIDATOR_NEW_BALANCE_NANO=$(echo "${CONSOLE_OUTPUT}" | jq -r '.balance')
                 VALIDATOR_BALANCE_DIFF=$((VALIDATOR_ACTUAL_BALANCE_NANO - VALIDATOR_NEW_BALANCE_NANO))
 
                 # 10000 tokens - minimal stake
