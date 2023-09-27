@@ -435,7 +435,29 @@
           },
           "signature": "IjEP0g5LJ2Tgivk7HzE8G4YMssRdQHkUtSaz2E+HONjqGPjoeXyFKDjqvN1ka92jUnYqZegiIPSSk4lM4HYpBQ==",
           "version": 1695729540
-        }
+        },
+        {
+          "@type": "dht.node",
+          "addr_list": {
+            "@type": "adnl.addressList",
+            "addrs": [
+              {
+                "@type": "adnl.address.udp",
+                "ip": 781626154,
+                "port": 30312
+              }
+            ],
+            "expire_at": 0,
+            "priority": 0,
+            "reinit_date": 1695810833,
+            "version": 1695810833
+          },
+          "id": {
+            "@type": "pub.ed25519",
+            "key": "SL3RRENCUugflVg59ZwZV2/twUP/q1CscsbaFFz/dB8="
+          },
+          "signature": "7tfoIGD9oM3zYctlWN10za7KlDeU3gUySY+H6naQbNCeE2XUKqHwh+An5ISJjaYNaMLODCFznPCAi6Wh9fIBDw==",
+          "version": 1695810833
       ]
     }
   },
