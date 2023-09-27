@@ -448,16 +448,16 @@
               {
                 "@type": "adnl.address.udp",
                 "ip": -1654992232,
-                "port": 3033
+                "port": 30303
               }
             ],
-            "version": 1695812733,
-            "reinit_date": 1695812733,
+            "version": 1695813955,
+            "reinit_date": 1695813955,
             "priority": 0,
             "expire_at": 0
           },
-          "version": 1695812733,
-          "signature": "sWqYeyGs820Eng/O222uo4miz1IG5POb6QYfQjBXDcGJabzhPbCiay+zTdrrwUBiObR9NxbLkt2cIWdx2iK6Aw=="
+          "version": 1695813955,
+          "signature": "IzHIBr6hhaUYmul1SdRo22Fk04SjdpJMFOFp8d2tkDWYHrxP+mg2CTmUs7DmZbzjUDlbBmjXhNtbjFGpOipqDw=="
         }
       ]
     }
