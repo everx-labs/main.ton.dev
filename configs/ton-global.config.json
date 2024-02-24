@@ -486,24 +486,24 @@
           "@type": "dht.node",
           "id": {
             "@type": "pub.ed25519",
-            "key": "NN0pPlHnRjJxmXAoo1WoZDesrFZr9i0rduXhJ4EP+RA="
+            "key": "6ykZ9xVIN6FKRbd0rrwFISX9vVuMM/IW2IdM1gqBaJg="
           },
           "addr_list": {
             "@type": "adnl.addressList",
             "addrs": [
               {
                 "@type": "adnl.address.udp",
-                "ip": -1654992232,
-                "port": 30303
+                "ip": 1489384649,
+                "port": 30300
               }
             ],
-            "version": 1695813955,
-            "reinit_date": 1695813955,
+            "version": 1708766488,
+            "reinit_date": 1708766488,
             "priority": 0,
             "expire_at": 0
           },
-          "version": 1695813955,
-          "signature": "IzHIBr6hhaUYmul1SdRo22Fk04SjdpJMFOFp8d2tkDWYHrxP+mg2CTmUs7DmZbzjUDlbBmjXhNtbjFGpOipqDw=="
+          "version": 1708766488,
+          "signature": "CBYzFlfqo8t9/ByJErE5BFyOM7JinCoCKiHKIvth4G/Ta72om+dy7v5Zb8P8wzS1ob8gSWWKpO/E76dvNp8XDw=="
         },
         {
           "@type": "dht.node",
